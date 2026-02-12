@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     seed_on_startup: bool = True
     force_https_redirect: bool = False
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        if isinstance(value, str):
+            if value.startswith("postgres://"):
+                return value.replace("postgres://", "postgresql+asyncpg://", 1)
+            if value.startswith("postgresql://") and "+asyncpg" not in value:
+                return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
