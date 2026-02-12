@@ -75,6 +75,17 @@ docker compose up --build -d
 - First-time helper: `./scripts/railway-deploy.sh`
 - Repeat deploy helper: `./infra/railway/redeploy.sh`
 
+## Current live deployment (this project)
+- GitHub repo: `https://github.com/SenNath/happyrobot-inbound-carrier-agent`
+- Railway backend: `https://backend-production-09d1b.up.railway.app`
+- Railway frontend: `https://frontend-production-1ee2.up.railway.app`
+
+## GitHub-linked Railway note
+- If `railway add --repo ...` returns `repo not found`, install/authorize the Railway GitHub app for that repository in GitHub settings.
+- Until that is enabled, deploy via CLI using:
+  - `railway up -s backend --path-as-root backend`
+  - `railway up -s frontend --path-as-root frontend`
+
 ## Production hardening checklist
 - Rotate `INTERNAL_API_KEY`
 - Restrict `CORS_ORIGINS` to known domains only
