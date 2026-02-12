@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: happyrobot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: happyrobot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: happyrobot-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/happyrobot
+      FMCSA_API_KEY: ${FMCSA_API_KEY}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local-dev-key}
+      CORS_ORIGINS: http://localhost:3000
+      RATE_LIMIT_PER_MINUTE: 120
+      SEED_ON_STARTUP: "true"
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: happyrobot-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      BACKEND_API_KEY: ${INTERNAL_API_KEY:-local-dev-key}
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: happyrobot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/happyrobot
+      FMCSA_API_KEY: ${FMCSA_API_KEY}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ALLOWED_HOSTS: localhost
+      FORCE_HTTPS_REDIRECT: "true"
+      RATE_LIMIT_PER_MINUTE: 120
+      SEED_ON_STARTUP: "true"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - backend
+    volumes:
+      - ./infra/local/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "443:443"
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
