@@ -39,13 +39,17 @@ async def test_successful_booking_flow(client, db_session, monkeypatch):
     load = await insert_load(db_session, load_id="BOOK-LOAD-001", rate=Decimal("2200.00"))
 
     async def mock_verify(self, mc_number: str):
-        return FMCSAResult(eligible=True, verification_status="eligible")
+        return FMCSAResult(eligible=True, verification="verified", legal_name="Carrier One", mc_number=mc_number)
 
     monkeypatch.setattr("app.services.fmcsa_client.FMCSAClient.verify_carrier", mock_verify)
 
     verify_resp = await client.post("/verify-carrier", json={"mc_number": "123456"}, headers=API_HEADERS)
     assert verify_resp.status_code == 200
-    assert verify_resp.json()["eligible"] is True
+    verify_payload = verify_resp.json()
+    assert verify_payload["eligible"] is True
+    assert verify_payload["verification"] == "verified"
+    assert verify_payload["legal_name"] == "Carrier One"
+    assert verify_payload["mc_number"] == "123456"
 
     search_resp = await client.post(
         "/search-loads",
@@ -89,13 +93,23 @@ async def test_successful_booking_flow(client, db_session, monkeypatch):
 @pytest.mark.asyncio
 async def test_ineligible_carrier(client, monkeypatch):
     async def mock_verify(self, mc_number: str):
-        return FMCSAResult(eligible=False, verification_status="ineligible")
+        return FMCSAResult(
+            eligible=False,
+            verification="not_authorized",
+            legal_name="Carrier Two",
+            mc_number=mc_number,
+        )
 
     monkeypatch.setattr("app.services.fmcsa_client.FMCSAClient.verify_carrier", mock_verify)
 
     response = await client.post("/verify-carrier", json={"mc_number": "999999"}, headers=API_HEADERS)
     assert response.status_code == 200
-    assert response.json() == {"eligible": False, "verification_status": "ineligible"}
+    assert response.json() == {
+        "eligible": False,
+        "verification": "not_authorized",
+        "legal_name": "Carrier Two",
+        "mc_number": "999999",
+    }
 
 
 @pytest.mark.asyncio
@@ -112,6 +126,63 @@ async def test_no_loads_returned(client, db_session):
     )
     assert response.status_code == 200
     assert response.json()["loads"] == []
+
+
+@pytest.mark.asyncio
+async def test_search_loads_fuzzy_matching_and_time_order(client, db_session):
+    near_pickup = datetime.now(timezone.utc) + timedelta(hours=2)
+    far_pickup = datetime.now(timezone.utc) + timedelta(hours=16)
+
+    near_load = Load(
+        load_id="FZ-CHI-001",
+        origin="Chicago, IL",
+        destination="Nashville, TN",
+        pickup_datetime=near_pickup,
+        delivery_datetime=near_pickup + timedelta(hours=8),
+        equipment_type="Dry Van",
+        loadboard_rate=Decimal("1800.00"),
+        notes="Near pickup test load",
+        weight=30000,
+        commodity_type="General Freight",
+        miles=470,
+        dimensions="53ft trailer",
+        num_of_pieces=12,
+        is_active=True,
+    )
+    far_load = Load(
+        load_id="FZ-CHI-002",
+        origin="Chicago, Illinois",
+        destination="Memphis, TN",
+        pickup_datetime=far_pickup,
+        delivery_datetime=far_pickup + timedelta(hours=10),
+        equipment_type="DryVan",
+        loadboard_rate=Decimal("1900.00"),
+        notes="Far pickup test load",
+        weight=32000,
+        commodity_type="General Freight",
+        miles=530,
+        dimensions="53ft trailer",
+        num_of_pieces=14,
+        is_active=True,
+    )
+    db_session.add_all([near_load, far_load])
+    await db_session.commit()
+
+    response = await client.post(
+        "/search-loads",
+        json={
+            "equipment_type": "dryvan",
+            "origin_location": "chicago il",
+            "availability_time": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+        },
+        headers=API_HEADERS,
+    )
+
+    assert response.status_code == 200
+    loads = response.json()["loads"]
+    assert len(loads) >= 2
+    assert loads[0]["load_id"] == "FZ-CHI-001"
+    assert loads[1]["load_id"] == "FZ-CHI-002"
 
 
 @pytest.mark.asyncio
@@ -154,4 +225,5 @@ async def test_tool_failure_fallback(client, monkeypatch):
     assert response.status_code == 200
     payload = response.json()
     assert payload["eligible"] is False
-    assert payload["verification_status"] == "verification_unavailable"
+    assert payload["verification"] == "verification_unavailable"
+    assert payload["mc_number"] == "123456"

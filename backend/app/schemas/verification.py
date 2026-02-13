@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -7,4 +9,6 @@ class VerifyCarrierRequest(BaseModel):
 
 class VerifyCarrierResponse(BaseModel):
     eligible: bool
-    verification_status: str | None = None
+    verification: Literal["verified", "not_authorized", "invalid_mc", "verification_unavailable"]
+    legal_name: str | None = None
+    mc_number: str

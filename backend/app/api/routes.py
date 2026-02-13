@@ -29,9 +29,19 @@ async def verify_carrier(
 
     try:
         result = await carrier_service.verify(request.mc_number)
-        return VerifyCarrierResponse(eligible=result.eligible, verification_status=result.verification_status)
+        return VerifyCarrierResponse(
+            eligible=result.eligible,
+            verification=result.verification,
+            legal_name=result.legal_name,
+            mc_number=result.mc_number,
+        )
     except FMCSAServiceError:
-        return VerifyCarrierResponse(eligible=False, verification_status="verification_unavailable")
+        return VerifyCarrierResponse(
+            eligible=False,
+            verification="verification_unavailable",
+            legal_name=None,
+            mc_number=request.mc_number,
+        )
 
 
 @router.post("/search-loads", response_model=SearchLoadsResponse)

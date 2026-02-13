@@ -21,12 +21,20 @@ Verify DOT authority status through FMCSA.
 ```json
 {
   "eligible": true,
-  "verification_status": "eligible"
+  "verification": "verified",
+  "legal_name": "D & J TRANSPORTATION INC",
+  "mc_number": "382168"
 }
 ```
 
+`verification` values:
+- `verified`
+- `not_authorized`
+- `invalid_mc`
+- `verification_unavailable`
+
 ## POST /search-loads
-Search eligible loads by equipment, origin, and available time.
+Search eligible loads by fuzzy matching equipment and origin, then sort by pickup proximity to `availability_time`.
 
 ### Request JSON
 ```json
@@ -36,6 +44,11 @@ Search eligible loads by equipment, origin, and available time.
   "availability_time": "2026-02-12T13:00:00Z"
 }
 ```
+
+Matching behavior:
+- `equipment_type`: case-insensitive partial match with normalization (e.g., `dryvan` -> `dry van`)
+- `origin_location`: city/state substring token matching
+- `availability_time`: used for ranking by closest pickup time (not strict equality filtering)
 
 ### Response JSON
 ```json

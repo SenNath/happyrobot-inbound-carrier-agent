@@ -26,12 +26,12 @@ HappyRobot hosts the voice workflow and calls backend tools. This project provid
 ## API flow
 1. `POST /verify-carrier`
 - Validates API key
-- Calls FMCSA API
-- Returns `eligible: boolean`
-- Falls back safely with `verification_unavailable` if FMCSA call fails
+- Calls FMCSA docket-number endpoint (`/carriers/docket-number/{mc}`)
+- Returns `eligible` plus `verification` (`verified`, `not_authorized`, `invalid_mc`, `verification_unavailable`)
+- Includes carrier metadata (`legal_name`, `mc_number`)
 
 2. `POST /search-loads`
-- Filters by equipment, origin, and availability window
+- Uses fuzzy equipment + origin matching and ranks by pickup-time proximity to availability
 - Returns `loads[]` with exact required fields
 
 3. `POST /evaluate-offer`

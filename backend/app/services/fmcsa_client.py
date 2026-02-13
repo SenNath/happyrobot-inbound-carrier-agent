@@ -10,7 +10,9 @@ class FMCSAServiceError(RuntimeError):
 @dataclass
 class FMCSAResult:
     eligible: bool
-    verification_status: str
+    verification: str
+    legal_name: str | None
+    mc_number: str
 
 
 class FMCSAClient:
@@ -24,31 +26,26 @@ class FMCSAClient:
         if not self.api_key:
             raise FMCSAServiceError("FMCSA_API_KEY is not configured")
 
-        endpoints = [
-            f"{self.BASE_URL}/carriers/{mc_number}",
-            f"{self.BASE_URL}/carriers/docket-number/{mc_number}",
-        ]
-
-        last_error: Exception | None = None
+        normalized_mc = self._normalize_mc_number(mc_number)
+        endpoint = f"{self.BASE_URL}/carriers/docket-number/{normalized_mc}"
         async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-            for endpoint in endpoints:
-                try:
-                    response = await client.get(endpoint, params={"webKey": self.api_key})
-                    response.raise_for_status()
-                    payload = response.json()
-                    result = self._parse_payload(payload)
-                    if result:
-                        return result
-                except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
-                    last_error = exc
-                    continue
+            try:
+                response = await client.get(endpoint, params={"webKey": self.api_key})
+                response.raise_for_status()
+                payload = response.json()
+                return self._parse_payload(payload, normalized_mc)
+            except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+                raise FMCSAServiceError(f"Unable to verify carrier from FMCSA: {exc}") from exc
 
-        raise FMCSAServiceError(f"Unable to verify carrier from FMCSA: {last_error}")
-
-    def _parse_payload(self, payload: dict) -> FMCSAResult | None:
+    def _parse_payload(self, payload: dict, mc_number: str) -> FMCSAResult:
         content = payload.get("content")
         if not content:
-            return None
+            return FMCSAResult(
+                eligible=False,
+                verification="invalid_mc",
+                legal_name=None,
+                mc_number=mc_number,
+            )
 
         carrier: dict | None = None
         if isinstance(content, list) and content:
@@ -57,14 +54,25 @@ class FMCSAClient:
             carrier = content.get("carrier") or content
 
         if not isinstance(carrier, dict):
-            return None
+            return FMCSAResult(
+                eligible=False,
+                verification="invalid_mc",
+                legal_name=None,
+                mc_number=mc_number,
+            )
 
-        allowed_to_operate = str(carrier.get("allowedToOperate", "")).lower() in {"true", "yes", "1"}
-        out_of_service = str(carrier.get("outOfServiceDate", "")).strip() != ""
-        operating_status = str(carrier.get("statusCode", "") or carrier.get("status", "")).upper()
+        allowed_to_operate = str(carrier.get("allowedToOperate", "")).upper() == "Y"
+        authority_status = str(carrier.get("statusCode", "")).upper()
+        eligible = allowed_to_operate and authority_status == "A"
+        verification = "verified" if eligible else "not_authorized"
 
-        in_service_statuses = {"A", "ACTIVE", "AUTHORIZED"}
-        eligible = allowed_to_operate and (not out_of_service) and (operating_status in in_service_statuses)
+        return FMCSAResult(
+            eligible=eligible,
+            verification=verification,
+            legal_name=carrier.get("legalName"),
+            mc_number=mc_number,
+        )
 
-        status = "eligible" if eligible else "ineligible"
-        return FMCSAResult(eligible=eligible, verification_status=status)
+    def _normalize_mc_number(self, mc_number: str) -> str:
+        normalized = "".join(ch for ch in mc_number if ch.isdigit())
+        return normalized or mc_number.strip()
