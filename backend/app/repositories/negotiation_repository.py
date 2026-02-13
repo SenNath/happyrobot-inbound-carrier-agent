@@ -35,6 +35,19 @@ class NegotiationRepository:
         await self.session.refresh(entry)
         return entry
 
+    async def latest_counter_before_round(self, load_id: str, round_number: int) -> Decimal | None:
+        query = (
+            select(Negotiation.counter_rate)
+            .where(
+                Negotiation.load_id == load_id,
+                Negotiation.round_number < round_number,
+                Negotiation.counter_rate.is_not(None),
+            )
+            .order_by(Negotiation.round_number.desc(), Negotiation.created_at.desc(), Negotiation.id.desc())
+            .limit(1)
+        )
+        return (await self.session.execute(query)).scalar_one_or_none()
+
     async def decision_breakdown(self) -> list[dict]:
         query = (
             select(

@@ -74,10 +74,18 @@ async def evaluate_offer(
     negotiation_repo = NegotiationRepository(session)
 
     load = await load_repo.get_by_load_id(request.load_id)
+    previous_counter_rate = None
+    if request.round_number > 1 and load is not None:
+        previous_counter_rate = await negotiation_repo.latest_counter_before_round(
+            load_id=request.load_id,
+            round_number=request.round_number,
+        )
+
     decision, counter_rate, reasoning = NegotiationService().evaluate_offer(
         load=load,
         carrier_offer=request.carrier_offer,
         round_number=request.round_number,
+        previous_counter_rate=previous_counter_rate,
     )
 
     if load is not None:

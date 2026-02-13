@@ -207,6 +207,31 @@ async def test_three_round_negotiation_failure(client, db_session):
 
 
 @pytest.mark.asyncio
+async def test_counter_offer_does_not_regress_across_rounds(client, db_session):
+    load = await insert_load(db_session, load_id="NEG-MONO-001", rate=Decimal("2000.00"))
+
+    round_one = await client.post(
+        "/evaluate-offer",
+        json={"load_id": load.load_id, "carrier_offer": 2280, "round_number": 1},
+        headers=API_HEADERS,
+    )
+    assert round_one.status_code == 200
+    round_one_payload = round_one.json()
+    assert round_one_payload["decision"] == "counter"
+    assert round_one_payload["counter_rate"] == 2120.0
+
+    round_two = await client.post(
+        "/evaluate-offer",
+        json={"load_id": load.load_id, "carrier_offer": 2180, "round_number": 2},
+        headers=API_HEADERS,
+    )
+    assert round_two.status_code == 200
+    round_two_payload = round_two.json()
+    assert round_two_payload["decision"] == "counter"
+    assert round_two_payload["counter_rate"] == 2120.0
+
+
+@pytest.mark.asyncio
 async def test_needs_more_info_flow(client):
     response = await client.post(
         "/evaluate-offer",
