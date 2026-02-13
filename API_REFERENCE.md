@@ -106,19 +106,35 @@ Persist structured analytics payload from HappyRobot AI Extract node.
 ### Request JSON
 ```json
 {
-  "call_sid": "CA_001",
+  "call_outcome": "booked",
+  "sentiment": "positive",
   "mc_number": "123456",
-  "load_id": "HR-CHI-ATL-001",
-  "final_decision": "accept",
-  "transcript": "...",
-  "sentiment_score": 0.67,
-  "call_duration_seconds": 344,
-  "analytics_payload": {
-    "intent": "book",
-    "objections": ["rate"]
-  }
+  "carrier_verified": "true",
+  "verification_failure_reason": "null",
+  "loads_returned_count": "3",
+  "loads_presented_count": "1",
+  "carrier_interest_level": "high",
+  "load_id_discussed": "LD1001",
+  "initial_rate": "1900",
+  "carrier_counter_rate": "2200",
+  "final_rate": "2050",
+  "negotiation_rounds": "3",
+  "deal_margin_pressure": "high",
+  "equipment_type": "dry van",
+  "origin_location": "Dallas TX",
+  "availability_time": "2026-02-13T16:09:01",
+  "driver_contact_collected": "true",
+  "was_transferred": "true",
+  "transfer_reason": "booking_confirmed"
 }
 ```
+
+Rules:
+- `call_outcome` is required.
+- all other fields are optional.
+- missing fields are stored as `NULL`.
+- string booleans/numbers are coerced to typed values.
+- server-side `server_timestamp` is added automatically.
 
 ### Response JSON
 ```json
@@ -133,6 +149,7 @@ Persist structured analytics payload from HappyRobot AI Extract node.
 - `GET /dashboard/funnel`
 - `GET /dashboard/negotiations`
 - `GET /dashboard/sentiment`
+- `GET /dashboard/sentiment-distribution`
 - `GET /dashboard/load-performance`
 
 ## Health

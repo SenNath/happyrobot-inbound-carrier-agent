@@ -40,7 +40,9 @@ HappyRobot hosts the voice workflow and calls backend tools. This project provid
 - Persists negotiation rows for analytics
 
 4. `POST /log-call`
-- Stores HappyRobot extract payload and call metadata
+- Stores HappyRobot AI Extract analytics fields as typed columns with 1:1 key mapping
+- `call_outcome` required; all other extract fields optional and nullable
+- server timestamp is generated on insert
 
 ## Dashboard design
 - **Framework:** Next.js 15 App Router + TypeScript

@@ -4,7 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db_session
 from app.repositories import CallRepository, LoadRepository, NegotiationRepository
 from app.schemas.call import LogCallRequest, LogCallResponse
-from app.schemas.dashboard import FunnelStage, LoadPerformancePoint, NegotiationInsight, OverviewStats, SentimentPoint
+from app.schemas.dashboard import (
+    FunnelStage,
+    LoadPerformancePoint,
+    NegotiationInsight,
+    OverviewStats,
+    SentimentDistributionPoint,
+    SentimentPoint,
+)
 from app.schemas.load import SearchLoadsRequest, SearchLoadsResponse
 from app.schemas.negotiation import EvaluateOfferRequest, EvaluateOfferResponse
 from app.schemas.verification import VerifyCarrierRequest, VerifyCarrierResponse
@@ -93,7 +100,9 @@ async def log_call(
     session: AsyncSession = Depends(get_db_session),
 ) -> LogCallResponse:
     repo = CallRepository(session)
-    record = await repo.create_call(request.model_dump())
+    payload = request.model_dump()
+    payload["analytics_payload"] = request.model_dump(mode="json")
+    record = await repo.create_call(payload)
     return LogCallResponse(status="logged", call_id=record.id)
 
 
@@ -120,6 +129,12 @@ async def dashboard_negotiations(session: AsyncSession = Depends(get_db_session)
 async def dashboard_sentiment(session: AsyncSession = Depends(get_db_session)) -> list[SentimentPoint]:
     service = AnalyticsService(CallRepository(session), NegotiationRepository(session), LoadRepository(session))
     return [SentimentPoint(**row) for row in await service.sentiment()]
+
+
+@router.get("/dashboard/sentiment-distribution", response_model=list[SentimentDistributionPoint])
+async def dashboard_sentiment_distribution(session: AsyncSession = Depends(get_db_session)) -> list[SentimentDistributionPoint]:
+    service = AnalyticsService(CallRepository(session), NegotiationRepository(session), LoadRepository(session))
+    return [SentimentDistributionPoint(**row) for row in await service.sentiment_distribution()]
 
 
 @router.get("/dashboard/load-performance", response_model=list[LoadPerformancePoint])

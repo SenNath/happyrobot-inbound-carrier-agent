@@ -99,5 +99,6 @@ pytest -q
   - `load_id`
   - `carrier_offer`
   - `round_number`
+- `POST /log-call` accepts AI Extract analytics payload with `call_outcome` required and all other fields optional; missing fields are stored as `NULL`.
 
 Detailed endpoint contracts are in `API_REFERENCE.md`.

@@ -76,13 +76,22 @@ async def test_successful_booking_flow(client, db_session, monkeypatch):
     log_resp = await client.post(
         "/log-call",
         json={
-            "call_sid": "CA_SUCCESS_001",
+            "call_outcome": "booked",
+            "sentiment": "positive",
             "mc_number": "123456",
-            "load_id": load.load_id,
-            "final_decision": "accept",
-            "sentiment_score": 0.81,
-            "call_duration_seconds": 372,
-            "analytics_payload": {"intent": "book_load", "objections": ["rate"]},
+            "carrier_verified": "true",
+            "loads_returned_count": "3",
+            "loads_presented_count": "1",
+            "load_id_discussed": load.load_id,
+            "initial_rate": "2100",
+            "carrier_counter_rate": "2280",
+            "final_rate": "2220",
+            "negotiation_rounds": "2",
+            "deal_margin_pressure": "medium",
+            "equipment_type": "dry van",
+            "origin_location": "Chicago IL",
+            "driver_contact_collected": "true",
+            "was_transferred": "false",
         },
         headers=API_HEADERS,
     )
@@ -227,3 +236,46 @@ async def test_tool_failure_fallback(client, monkeypatch):
     assert payload["eligible"] is False
     assert payload["verification"] == "verification_unavailable"
     assert payload["mc_number"] == "123456"
+
+
+@pytest.mark.asyncio
+async def test_log_call_type_coercion_and_null_defaults(client):
+    response = await client.post(
+        "/log-call",
+        json={
+            "call_outcome": "booked",
+            "sentiment": "positive",
+            "mc_number": "123456",
+            "carrier_verified": "true",
+            "verification_failure_reason": "null",
+            "loads_returned_count": "3",
+            "loads_presented_count": "1",
+            "carrier_interest_level": "high",
+            "load_id_discussed": "LD1001",
+            "initial_rate": "1900",
+            "carrier_counter_rate": "2200",
+            "final_rate": "2050",
+            "negotiation_rounds": "3",
+            "deal_margin_pressure": "high",
+            "equipment_type": "dry van",
+            "origin_location": "Dallas TX",
+            "availability_time": "2026-02-13T16:09:01",
+            "driver_contact_collected": "true",
+            "was_transferred": "true",
+            "transfer_reason": "booking_confirmed",
+        },
+        headers=API_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "logged"
+
+
+@pytest.mark.asyncio
+async def test_log_call_rejects_unknown_fields(client):
+    response = await client.post(
+        "/log-call",
+        json={"call_outcome": "booked", "unexpected_key": "value"},
+        headers=API_HEADERS,
+    )
+    assert response.status_code == 422
