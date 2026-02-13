@@ -1,10 +1,12 @@
 import { SentimentChart } from "@/components/charts/sentiment-chart";
+import { SentimentDistributionChart } from "@/components/charts/sentiment-distribution-chart";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { getSentiment } from "@/lib/api";
+import { getSentiment, getSentimentDistribution } from "@/lib/api";
 
 export default async function SentimentPage() {
   const data = await getSentiment();
+  const distribution = await getSentimentDistribution();
 
   return (
     <>
@@ -23,6 +25,20 @@ export default async function SentimentPage() {
           </div>
         ) : (
           <p className="mt-6 text-sm text-muted-foreground">No sentiment telemetry available yet.</p>
+        )}
+      </Card>
+
+      <Card>
+        <CardTitle>Sentiment Distribution</CardTitle>
+        <CardDescription className="mt-1">
+          Distribution of extract-level sentiment labels (`positive`, `neutral`, `negative`, `unknown`).
+        </CardDescription>
+        {distribution.length > 0 ? (
+          <div className="mt-6">
+            <SentimentDistributionChart data={distribution} />
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-muted-foreground">No sentiment distribution data available yet.</p>
         )}
       </Card>
     </>

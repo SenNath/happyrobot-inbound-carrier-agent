@@ -3,6 +3,7 @@ from app.schemas.dashboard import (
     FunnelStage,
     NegotiationInsight,
     OverviewStats,
+    SentimentDistributionPoint,
     SentimentPoint,
 )
 from app.schemas.load import LoadOut, SearchLoadsRequest, SearchLoadsResponse
@@ -20,6 +21,7 @@ __all__ = [
     "OverviewStats",
     "SearchLoadsRequest",
     "SearchLoadsResponse",
+    "SentimentDistributionPoint",
     "SentimentPoint",
     "VerifyCarrierRequest",
     "VerifyCarrierResponse",

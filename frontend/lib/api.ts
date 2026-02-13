@@ -4,6 +4,12 @@ export type OverviewStats = {
   booked_loads: number;
   avg_sentiment: number;
   revenue_accepted: number;
+  booking_rate: number;
+  avg_negotiation_rounds: number;
+  avg_margin_pressure: number;
+  verified_vs_unverified_ratio: number;
+  verified_count: number;
+  unverified_count: number;
 };
 
 export type FunnelStage = {
@@ -20,6 +26,11 @@ export type NegotiationInsight = {
 export type SentimentPoint = {
   date: string;
   avg_sentiment: number;
+};
+
+export type SentimentDistributionPoint = {
+  sentiment: string;
+  count: number;
 };
 
 export type LoadPerformancePoint = {
@@ -58,6 +69,12 @@ export async function getOverview(): Promise<OverviewStats> {
     booked_loads: 0,
     avg_sentiment: 0,
     revenue_accepted: 0,
+    booking_rate: 0,
+    avg_negotiation_rounds: 0,
+    avg_margin_pressure: 0,
+    verified_vs_unverified_ratio: 0,
+    verified_count: 0,
+    unverified_count: 0,
   });
 }
 
@@ -71,6 +88,10 @@ export async function getNegotiations(): Promise<NegotiationInsight[]> {
 
 export async function getSentiment(): Promise<SentimentPoint[]> {
   return fetchJSON<SentimentPoint[]>("/dashboard/sentiment", []);
+}
+
+export async function getSentimentDistribution(): Promise<SentimentDistributionPoint[]> {
+  return fetchJSON<SentimentDistributionPoint[]>("/dashboard/sentiment-distribution", []);
 }
 
 export async function getLoadPerformance(): Promise<LoadPerformancePoint[]> {

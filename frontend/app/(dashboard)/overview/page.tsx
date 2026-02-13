@@ -16,6 +16,22 @@ export default async function OverviewPage() {
     { label: "Verified Carriers", value: overview.verified_carriers.toString(), help: "FMCSA-qualified profiles" },
     { label: "Booked Loads", value: overview.booked_loads.toString(), help: "Negotiations finalized" },
     { label: "Accepted Revenue", value: formatCurrency(overview.revenue_accepted), help: "Total accepted offers" },
+    { label: "Booking Rate", value: `${overview.booking_rate.toFixed(1)}%`, help: "Booked / total call outcomes" },
+    {
+      label: "Avg Negotiation Rounds",
+      value: overview.avg_negotiation_rounds.toFixed(2),
+      help: "Average rounds before call outcome",
+    },
+    {
+      label: "Avg Margin Pressure",
+      value: overview.avg_margin_pressure.toFixed(2),
+      help: "Low=1, Medium=2, High=3 index",
+    },
+    {
+      label: "Verified vs Unverified",
+      value: `${overview.verified_count}:${overview.unverified_count}`,
+      help: `Ratio ${overview.verified_vs_unverified_ratio.toFixed(2)}`,
+    },
   ];
 
   return (

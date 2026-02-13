@@ -7,6 +7,12 @@ class OverviewStats(BaseModel):
     booked_loads: int
     avg_sentiment: float
     revenue_accepted: float
+    booking_rate: float
+    avg_negotiation_rounds: float
+    avg_margin_pressure: float
+    verified_vs_unverified_ratio: float
+    verified_count: int
+    unverified_count: int
 
 
 class FunnelStage(BaseModel):
@@ -23,6 +29,11 @@ class NegotiationInsight(BaseModel):
 class SentimentPoint(BaseModel):
     date: str
     avg_sentiment: float
+
+
+class SentimentDistributionPoint(BaseModel):
+    sentiment: str
+    count: int
 
 
 class LoadPerformancePoint(BaseModel):
