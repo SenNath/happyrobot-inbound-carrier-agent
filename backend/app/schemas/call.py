@@ -99,6 +99,11 @@ class LogCallRequest(BaseModel):
     def normalize_optional_floats(cls, value):
         return _coerce_optional_float(value)
 
+    @field_validator("availability_time", mode="before")
+    @classmethod
+    def normalize_optional_datetime(cls, value):
+        return _normalize_optional_string(value)
+
 
 class LogCallResponse(BaseModel):
     status: str

@@ -304,3 +304,35 @@ async def test_log_call_rejects_unknown_fields(client):
         headers=API_HEADERS,
     )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_log_call_accepts_empty_strings_as_null(client):
+    response = await client.post(
+        "/log-call",
+        json={
+            "call_outcome": "booked",
+            "sentiment": "",
+            "mc_number": "",
+            "carrier_verified": "",
+            "verification_failure_reason": "",
+            "loads_returned_count": "",
+            "loads_presented_count": "",
+            "carrier_interest_level": "",
+            "load_id_discussed": "",
+            "initial_rate": "",
+            "carrier_counter_rate": "",
+            "final_rate": "",
+            "negotiation_rounds": "",
+            "deal_margin_pressure": "",
+            "equipment_type": "",
+            "origin_location": "",
+            "availability_time": "",
+            "driver_contact_collected": "",
+            "was_transferred": "",
+            "transfer_reason": "",
+        },
+        headers=API_HEADERS,
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "logged"
