@@ -121,6 +121,7 @@ class CallRepository:
                 sentiment_expr.label("sentiment"),
                 func.count(Call.id).label("count"),
             )
+            .where(sentiment_expr != "unknown")
             .group_by(sentiment_expr)
             .order_by(func.count(Call.id).desc())
         )
