@@ -1,3 +1,5 @@
+import re
+
 from sqlalchemy import Numeric, case, cast, func, literal_column, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -77,12 +79,14 @@ class CallRepository:
         stage_query = select(
             func.count(Call.id).label("total_calls"),
             func.sum(case((Call.carrier_verified.is_(True), 1), else_=0)).label("verified"),
+            func.sum(func.coalesce(Call.loads_presented_count, 0)).label("loads_pitched"),
             func.sum(case((func.lower(Call.call_outcome) == "booked", 1), else_=0)).label("booked"),
         )
         result = (await self.session.execute(stage_query)).one()
         return [
             {"stage": "Calls Received", "value": int(result.total_calls or 0)},
             {"stage": "Verified", "value": int(result.verified or 0)},
+            {"stage": "Loads Pitched", "value": int(result.loads_pitched or 0)},
             {"stage": "Booked", "value": int(result.booked or 0)},
         ]
 
@@ -124,10 +128,12 @@ class CallRepository:
         return [{"sentiment": row.sentiment, "count": int(row.count)} for row in rows]
 
     async def load_performance_insights(self) -> list[dict]:
-        equipment_expr = func.coalesce(func.lower(Call.equipment_type), literal_column("'unknown'"))
+        equipment_expr = func.lower(Call.equipment_type)
         query = (
             select(
-                equipment_expr.label("equipment_type"),
+                equipment_expr.label("equipment_type_raw"),
+                Load.origin.label("origin"),
+                Load.destination.label("destination"),
                 func.count(Call.id).label("total_calls"),
                 func.sum(case((func.lower(Call.call_outcome) == "booked", 1), else_=0)).label("booked_calls"),
                 func.round(cast(func.coalesce(func.avg(Call.final_rate), 0.0), Numeric(10, 2)), 2).label("avg_final_rate"),
@@ -139,13 +145,38 @@ class CallRepository:
             )
             .select_from(Call)
             .join(Load, Load.load_id == Call.load_id_discussed, isouter=True)
-            .group_by(equipment_expr)
+            .where(Call.load_id_discussed.is_not(None), Call.equipment_type.is_not(None))
+            .group_by(equipment_expr, Load.origin, Load.destination)
             .order_by(func.count(Call.id).desc())
-            .limit(10)
+            .limit(40)
         )
         rows = (await self.session.execute(query)).all()
+
+        def normalize_equipment(raw: str | None) -> str | None:
+            if raw is None:
+                return None
+            value = raw.strip().lower()
+            if not value:
+                return None
+            tokens = [token.strip() for token in re.split(r"[,/&;|]+", value) if token.strip()]
+            recognized: list[str] = []
+            for token in tokens:
+                if "dry" in token and "van" in token:
+                    recognized.append("Dry Van")
+                elif "reefer" in token:
+                    recognized.append("Reefer")
+                elif "flatbed" in token:
+                    recognized.append("Flatbed")
+            # Ignore mixed/ambiguous values (e.g. "reefer, dry van").
+            if len(set(recognized)) != 1:
+                return None
+            return recognized[0]
+
         insights: list[dict] = []
         for row in rows:
+            equipment_type = normalize_equipment(row.equipment_type_raw)
+            if equipment_type is None:
+                continue
             total_calls = int(row.total_calls or 0)
             booked_calls = int(row.booked_calls or 0)
             booking_rate = round((booked_calls / total_calls) * 100.0, 2) if total_calls else 0.0
@@ -156,7 +187,9 @@ class CallRepository:
             )
             insights.append(
                 {
-                    "equipment_type": str(row.equipment_type).title(),
+                    "equipment_type": equipment_type,
+                    "origin": row.origin or "Unknown",
+                    "destination": row.destination or "Unknown",
                     "total_calls": total_calls,
                     "booked_calls": booked_calls,
                     "booking_rate": booking_rate,

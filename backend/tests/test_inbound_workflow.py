@@ -358,7 +358,12 @@ async def test_dashboard_metrics_endpoints_return_success(client, db_session):
     sentiment_resp = await client.get("/dashboard/sentiment", headers=API_HEADERS)
     distribution_resp = await client.get("/dashboard/sentiment-distribution", headers=API_HEADERS)
     load_perf_resp = await client.get("/dashboard/load-performance", headers=API_HEADERS)
+    funnel_resp = await client.get("/dashboard/funnel", headers=API_HEADERS)
 
     assert sentiment_resp.status_code == 200
     assert distribution_resp.status_code == 200
     assert load_perf_resp.status_code == 200
+    assert funnel_resp.status_code == 200
+    stages = [row["stage"] for row in funnel_resp.json()]
+    assert "Calls Received" in stages
+    assert "Loads Pitched" in stages

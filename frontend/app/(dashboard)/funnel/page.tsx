@@ -7,10 +7,12 @@ export default async function FunnelPage() {
   const funnel = await getFunnel();
   const callsReceived = funnel.find((row) => row.stage === "Calls Received")?.value ?? funnel[0]?.value ?? 0;
   const verifiedCount = funnel.find((row) => row.stage === "Verified")?.value ?? 0;
+  const loadsPitched = funnel.find((row) => row.stage === "Loads Pitched")?.value ?? 0;
   const bookedCount = funnel.find((row) => row.stage === "Booked")?.value ?? 0;
-  const unbookedCount = Math.max(callsReceived - bookedCount, 0);
 
   const callRate = (value: number) => (callsReceived > 0 ? (value / callsReceived) * 100 : 0);
+  const verifiedRate = (value: number) => (verifiedCount > 0 ? (value / verifiedCount) * 100 : 0);
+  const pitchedRate = (value: number) => (loadsPitched > 0 ? (value / loadsPitched) * 100 : 0);
 
   return (
     <>
@@ -41,12 +43,12 @@ export default async function FunnelPage() {
           <Card className="bg-gradient-to-b from-card to-accent/20">
             <CardDescription>Total Booked</CardDescription>
             <CardTitle className="mt-2 text-2xl">{bookedCount}</CardTitle>
-            <p className="mt-2 text-xs text-muted-foreground">{callRate(bookedCount).toFixed(1)}% of calls received</p>
+            <p className="mt-2 text-xs text-muted-foreground">{verifiedRate(bookedCount).toFixed(1)}% of verified calls</p>
           </Card>
           <Card className="bg-gradient-to-b from-card to-accent/20">
-            <CardDescription>Unbooked Calls</CardDescription>
-            <CardTitle className="mt-2 text-2xl">{unbookedCount}</CardTitle>
-            <p className="mt-2 text-xs text-muted-foreground">{callRate(unbookedCount).toFixed(1)}% of calls received</p>
+            <CardDescription>Successful Loads</CardDescription>
+            <CardTitle className="mt-2 text-2xl">{bookedCount}</CardTitle>
+            <p className="mt-2 text-xs text-muted-foreground">{pitchedRate(bookedCount).toFixed(1)}% of loads pitched</p>
           </Card>
         </section>
       ) : null}

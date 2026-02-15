@@ -35,6 +35,8 @@ export type SentimentDistributionPoint = {
 
 export type LoadPerformancePoint = {
   equipment_type: string;
+  origin: string;
+  destination: string;
   total_calls: number;
   booked_calls: number;
   booking_rate: number;

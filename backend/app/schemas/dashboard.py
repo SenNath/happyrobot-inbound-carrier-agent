@@ -38,6 +38,8 @@ class SentimentDistributionPoint(BaseModel):
 
 class LoadPerformancePoint(BaseModel):
     equipment_type: str
+    origin: str
+    destination: str
     total_calls: int
     booked_calls: int
     booking_rate: float
