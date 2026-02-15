@@ -53,6 +53,7 @@ export default async function LoadPerformancePage() {
     .sort((a, b) => b.calls - a.calls);
 
   const topCorridors = [...data]
+    .filter((row) => row.origin.toLowerCase() !== "unknown" && row.destination.toLowerCase() !== "unknown")
     .sort((a, b) => b.total_calls - a.total_calls)
     .slice(0, 5)
     .map((row) => ({
@@ -76,7 +77,7 @@ export default async function LoadPerformancePage() {
   return (
     <>
       <header className="space-y-2">
-        <Badge>Lane Efficiency</Badge>
+        <Badge>Load Insights</Badge>
         <h2 className="font-[var(--font-heading)] text-3xl font-semibold tracking-tight">Load Performance</h2>
       </header>
       <section className="grid gap-4 md:grid-cols-3">
@@ -93,7 +94,7 @@ export default async function LoadPerformancePage() {
         <Card className="bg-gradient-to-b from-card to-accent/20">
           <CardDescription>Best Booking Segment</CardDescription>
           <CardTitle className="mt-2 text-2xl">{bestBookingEquipment.equipment_type}</CardTitle>
-          <p className="mt-2 text-xs text-muted-foreground">{bestBookingEquipment.booking_rate.toFixed(1)}% booking rate</p>
+          <p className="mt-2 text-xs text-muted-foreground">{bestBookingEquipment.booking_rate.toFixed(2)}% booking rate</p>
         </Card>
       </section>
 
@@ -107,7 +108,7 @@ export default async function LoadPerformancePage() {
             <LoadPerformanceChart data={equipmentSummary} />
             <p className="mt-4 text-xs text-muted-foreground">
               Average market gap across equipment types: {averageGapPct >= 0 ? "+" : ""}
-              {averageGapPct.toFixed(1)}%
+              {averageGapPct.toFixed(2)}%
             </p>
           </div>
         ) : (
@@ -124,7 +125,7 @@ export default async function LoadPerformancePage() {
               <div key={row.corridor} className="rounded-lg border border-border/70 bg-card/80 p-3">
                 <p className="text-sm font-medium">{row.corridor}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Calls: {row.calls} | Booking rate: {row.booking_rate.toFixed(1)}% | Avg miles: {row.avg_miles.toFixed(0)}
+                  Calls: {row.calls} | Booking rate: {row.booking_rate.toFixed(2)}% | Avg miles: {row.avg_miles.toFixed(0)}
                 </p>
               </div>
             ))}
@@ -137,7 +138,7 @@ export default async function LoadPerformancePage() {
           {milesBands.map((row) => (
             <Card key={row.label} className="bg-gradient-to-b from-card to-accent/20">
               <CardDescription>{row.label}</CardDescription>
-              <CardTitle className="mt-2 text-2xl">{row.booking_rate.toFixed(1)}%</CardTitle>
+              <CardTitle className="mt-2 text-2xl">{row.booking_rate.toFixed(2)}%</CardTitle>
               <p className="mt-2 text-xs text-muted-foreground">{row.calls} calls in this band</p>
             </Card>
           ))}
