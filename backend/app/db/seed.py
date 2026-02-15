@@ -1,3 +1,5 @@
+import argparse
+import asyncio
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -129,3 +131,48 @@ async def seed_loads_if_empty(session: AsyncSession) -> None:
 
     session.add_all(inserts)
     await session.commit()
+
+
+async def seed_loads_append_missing(session: AsyncSession) -> int:
+    existing_ids = set((await session.execute(select(Load.load_id))).scalars().all())
+    now = datetime.now(timezone.utc)
+    inserts: list[Load] = []
+    for idx, row in enumerate(SEED_LOADS):
+        if row["load_id"] in existing_ids:
+            continue
+        pickup = now + timedelta(hours=8 + idx * 6)
+        delivery = pickup + timedelta(hours=10 + idx * 2)
+        inserts.append(Load(**row, pickup_datetime=pickup, delivery_datetime=delivery, is_active=True))
+
+    if inserts:
+        session.add_all(inserts)
+        await session.commit()
+    return len(inserts)
+
+
+async def _run_seed_cli(mode: str) -> None:
+    from app.db.session import SessionLocal
+
+    async with SessionLocal() as session:
+        if mode == "append":
+            inserted = await seed_loads_append_missing(session)
+            print(f"append mode complete: inserted={inserted}")
+            return
+        await seed_loads_if_empty(session)
+        print("if-empty mode complete")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Seed loads data")
+    parser.add_argument(
+        "--mode",
+        choices=["if-empty", "append"],
+        default="if-empty",
+        help="if-empty: only seed when table is empty; append: insert missing seed load_ids",
+    )
+    args = parser.parse_args()
+    asyncio.run(_run_seed_cli(args.mode))
+
+
+if __name__ == "__main__":
+    main()

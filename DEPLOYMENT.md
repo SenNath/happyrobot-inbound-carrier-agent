@@ -47,6 +47,22 @@ docker compose up --build -d
   - `uvicorn app.main:app ...`
 - Frontend runs `next start`
 
+### 5. Ensure loads exist (required for HappyRobot E2E)
+HappyRobot flows require at least one active load in `loads`. Use this idempotent append seed command to insert any missing seed `load_id`s even when data already exists.
+
+- Local:
+```bash
+cd backend
+python -m app.db.seed --mode append
+```
+
+- Railway backend service:
+```bash
+railway run -s backend -- bash -lc "cd backend && ./.venv/bin/python -m app.db.seed --mode append"
+```
+
+You can re-run this safely; existing seed IDs are skipped.
+
 ## Health checks
 - Backend health: `GET /health`
 - Verify API auth by calling `/health` (no auth) and `/dashboard/overview` (requires `X-API-Key`)
@@ -74,6 +90,17 @@ docker compose up --build -d
 ### Shell scripts
 - First-time helper: `./scripts/railway-deploy.sh`
 - Repeat deploy helper: `./infra/railway/redeploy.sh`
+
+## End-to-end smoke test checklist
+Run this after deploy (local or Railway) so any reviewer can validate the full workflow quickly:
+
+1. Append seed loads (`python -m app.db.seed --mode append`).
+2. `GET /health` returns `{"status":"ok"}`.
+3. `POST /verify-carrier` with a known MC number returns `eligible` + `verification`.
+4. `POST /search-loads` for `Dry Van` + valid origin returns at least one load.
+5. `POST /evaluate-offer` returns deterministic `accept|counter|reject|needs_more_info`.
+6. `POST /log-call` with extract payload returns `{"status":"logged","call_id":...}`.
+7. `GET /dashboard/overview` returns KPI payload including booking rate and negotiation metrics.
 
 ## Current live deployment (this project)
 - GitHub repo: `https://github.com/SenNath/happyrobot-inbound-carrier-agent`
