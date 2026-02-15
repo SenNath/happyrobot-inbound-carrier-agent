@@ -45,7 +45,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </nav>
       </aside>
 
-      <main className="space-y-8">{children}</main>
+      <main className="space-y-8">
+        <div className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-accent/40 to-transparent px-4 py-3 text-xs text-muted-foreground shadow-soft">
+          Live analytics stream across verification, negotiation, sentiment, and lane performance.
+        </div>
+        {children}
+      </main>
     </div>
   );
 }

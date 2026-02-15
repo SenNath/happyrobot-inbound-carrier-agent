@@ -1,4 +1,4 @@
-from sqlalchemy import case, func, select
+from sqlalchemy import Numeric, case, cast, func, literal_column, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Call
@@ -88,23 +88,21 @@ class CallRepository:
 
     async def sentiment_timeseries(self) -> list[dict]:
         date_bucket = func.date(Call.created_at)
+        sentiment_avg_raw = func.coalesce(
+            func.avg(
+                case(
+                    (func.lower(Call.sentiment) == "positive", 1.0),
+                    (func.lower(Call.sentiment) == "neutral", 0.0),
+                    (func.lower(Call.sentiment) == "negative", -1.0),
+                    else_=None,
+                )
+            ),
+            0.0,
+        )
         query = (
             select(
                 date_bucket.label("date"),
-                func.round(
-                    func.coalesce(
-                        func.avg(
-                            case(
-                                (func.lower(Call.sentiment) == "positive", 1.0),
-                                (func.lower(Call.sentiment) == "neutral", 0.0),
-                                (func.lower(Call.sentiment) == "negative", -1.0),
-                                else_=None,
-                            )
-                        ),
-                        0.0,
-                    ),
-                    2,
-                ).label("avg_sentiment"),
+                func.round(cast(sentiment_avg_raw, Numeric(6, 2)), 2).label("avg_sentiment"),
             )
             .group_by(date_bucket)
             .order_by(date_bucket)
@@ -113,12 +111,13 @@ class CallRepository:
         return [{"date": str(row.date), "avg_sentiment": float(row.avg_sentiment)} for row in rows]
 
     async def sentiment_distribution(self) -> list[dict]:
+        sentiment_expr = func.coalesce(func.lower(Call.sentiment), literal_column("'unknown'"))
         query = (
             select(
-                func.coalesce(func.lower(Call.sentiment), "unknown").label("sentiment"),
+                sentiment_expr.label("sentiment"),
                 func.count(Call.id).label("count"),
             )
-            .group_by(func.coalesce(func.lower(Call.sentiment), "unknown"))
+            .group_by(sentiment_expr)
             .order_by(func.count(Call.id).desc())
         )
         rows = (await self.session.execute(query)).all()

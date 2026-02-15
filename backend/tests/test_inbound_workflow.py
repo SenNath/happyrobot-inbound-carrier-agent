@@ -336,3 +336,29 @@ async def test_log_call_accepts_empty_strings_as_null(client):
     )
     assert response.status_code == 200
     assert response.json()["status"] == "logged"
+
+
+@pytest.mark.asyncio
+async def test_dashboard_metrics_endpoints_return_success(client, db_session):
+    load = await insert_load(db_session, load_id="DASH-LOAD-001", rate=Decimal("2100.00"))
+    eval_resp = await client.post(
+        "/evaluate-offer",
+        json={"load_id": load.load_id, "carrier_offer": 2090, "round_number": 1},
+        headers=API_HEADERS,
+    )
+    assert eval_resp.status_code == 200
+
+    log_resp = await client.post(
+        "/log-call",
+        json={"call_outcome": "booked", "sentiment": "positive", "mc_number": "123456", "carrier_verified": "true"},
+        headers=API_HEADERS,
+    )
+    assert log_resp.status_code == 200
+
+    sentiment_resp = await client.get("/dashboard/sentiment", headers=API_HEADERS)
+    distribution_resp = await client.get("/dashboard/sentiment-distribution", headers=API_HEADERS)
+    load_perf_resp = await client.get("/dashboard/load-performance", headers=API_HEADERS)
+
+    assert sentiment_resp.status_code == 200
+    assert distribution_resp.status_code == 200
+    assert load_perf_resp.status_code == 200

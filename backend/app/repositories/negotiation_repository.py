@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import case, func, select
+from sqlalchemy import Numeric, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Negotiation
@@ -76,11 +76,12 @@ class NegotiationRepository:
     async def load_performance(self) -> list[dict]:
         attempts = func.count(Negotiation.id)
         accepted = func.sum(case((Negotiation.decision == "accept", 1), else_=0))
+        acceptance_rate_expr = cast((accepted * 100.0) / func.nullif(attempts, 0), Numeric(8, 2))
 
         query = (
             select(
                 Negotiation.load_id,
-                func.round((accepted * 100.0) / func.nullif(attempts, 0), 2).label("acceptance_rate"),
+                func.round(acceptance_rate_expr, 2).label("acceptance_rate"),
                 func.round(func.avg(Negotiation.carrier_offer), 2).label("avg_offer"),
             )
             .group_by(Negotiation.load_id)
