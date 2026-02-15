@@ -55,7 +55,7 @@ export default async function SentimentPage() {
       <Card>
         <CardTitle>Sentiment Distribution</CardTitle>
         <CardDescription className="mt-1">
-          Distribution of extract-level sentiment labels (`positive`, `neutral`, `negative`, `unknown`).
+          Distribution of extract-level sentiment labels (`positive`, `neutral`, `negative`).
         </CardDescription>
         {distribution.length > 0 ? (
           <div className="mt-6">
