@@ -37,7 +37,11 @@ class SentimentDistributionPoint(BaseModel):
 
 
 class LoadPerformancePoint(BaseModel):
-    load_id: str
-    acceptance_rate: float
-    avg_offer: float
-    loadboard_rate: float
+    equipment_type: str
+    total_calls: int
+    booked_calls: int
+    booking_rate: float
+    avg_final_rate: float
+    avg_loadboard_rate: float
+    avg_miles: float
+    market_gap_pct: float

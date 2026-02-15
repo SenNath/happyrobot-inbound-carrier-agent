@@ -34,10 +34,14 @@ export type SentimentDistributionPoint = {
 };
 
 export type LoadPerformancePoint = {
-  load_id: string;
-  acceptance_rate: number;
-  avg_offer: number;
-  loadboard_rate: number;
+  equipment_type: string;
+  total_calls: number;
+  booked_calls: number;
+  booking_rate: number;
+  avg_final_rate: number;
+  avg_loadboard_rate: number;
+  avg_miles: number;
+  market_gap_pct: number;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";

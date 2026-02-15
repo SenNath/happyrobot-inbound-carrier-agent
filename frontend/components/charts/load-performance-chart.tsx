@@ -10,14 +10,14 @@ export function LoadPerformanceChart({ data }: { data: LoadPerformancePoint[] })
       <ResponsiveContainer>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="load_id" interval={0} angle={-16} textAnchor="end" height={80} />
-          <YAxis yAxisId="percent" orientation="left" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-          <YAxis yAxisId="rate" orientation="right" tickFormatter={(v) => `$${v}`} />
+          <XAxis dataKey="equipment_type" />
+          <YAxis yAxisId="percent" orientation="left" tickFormatter={(v) => `${v}%`} />
+          <YAxis yAxisId="count" orientation="right" />
           <Tooltip />
           <Legend />
-          <Bar yAxisId="percent" dataKey="acceptance_rate" name="Acceptance %" fill="#0f6d92" radius={[6, 6, 0, 0]} />
-          <Bar yAxisId="rate" dataKey="avg_offer" name="Avg Offer" fill="#1da9c3" radius={[6, 6, 0, 0]} />
-          <Bar yAxisId="rate" dataKey="loadboard_rate" name="Loadboard Rate" fill="#74d1e3" radius={[6, 6, 0, 0]} />
+          <Bar yAxisId="percent" dataKey="booking_rate" name="Booking Rate %" fill="#0f6d92" radius={[6, 6, 0, 0]} />
+          <Bar yAxisId="percent" dataKey="market_gap_pct" name="Final vs Market Gap %" fill="#1da9c3" radius={[6, 6, 0, 0]} />
+          <Bar yAxisId="count" dataKey="total_calls" name="Calls" fill="#74d1e3" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

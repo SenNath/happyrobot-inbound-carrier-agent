@@ -1,7 +1,7 @@
 from sqlalchemy import Numeric, case, cast, func, literal_column, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Call
+from app.models import Call, Load
 
 
 class CallRepository:
@@ -75,14 +75,14 @@ class CallRepository:
 
     async def funnel_breakdown(self) -> list[dict]:
         stage_query = select(
+            func.count(Call.id).label("total_calls"),
             func.sum(case((Call.carrier_verified.is_(True), 1), else_=0)).label("verified"),
-            func.sum(case((Call.loads_presented_count.is_not(None), 1), else_=0)).label("presented"),
             func.sum(case((func.lower(Call.call_outcome) == "booked", 1), else_=0)).label("booked"),
         )
         result = (await self.session.execute(stage_query)).one()
         return [
+            {"stage": "Calls Received", "value": int(result.total_calls or 0)},
             {"stage": "Verified", "value": int(result.verified or 0)},
-            {"stage": "Load Presented", "value": int(result.presented or 0)},
             {"stage": "Booked", "value": int(result.booked or 0)},
         ]
 
@@ -122,3 +122,48 @@ class CallRepository:
         )
         rows = (await self.session.execute(query)).all()
         return [{"sentiment": row.sentiment, "count": int(row.count)} for row in rows]
+
+    async def load_performance_insights(self) -> list[dict]:
+        equipment_expr = func.coalesce(func.lower(Call.equipment_type), literal_column("'unknown'"))
+        query = (
+            select(
+                equipment_expr.label("equipment_type"),
+                func.count(Call.id).label("total_calls"),
+                func.sum(case((func.lower(Call.call_outcome) == "booked", 1), else_=0)).label("booked_calls"),
+                func.round(cast(func.coalesce(func.avg(Call.final_rate), 0.0), Numeric(10, 2)), 2).label("avg_final_rate"),
+                func.round(
+                    cast(func.coalesce(func.avg(cast(Load.loadboard_rate, Numeric(10, 2))), 0.0), Numeric(10, 2)),
+                    2,
+                ).label("avg_loadboard_rate"),
+                func.round(cast(func.coalesce(func.avg(Load.miles), 0.0), Numeric(10, 2)), 2).label("avg_miles"),
+            )
+            .select_from(Call)
+            .join(Load, Load.load_id == Call.load_id_discussed, isouter=True)
+            .group_by(equipment_expr)
+            .order_by(func.count(Call.id).desc())
+            .limit(10)
+        )
+        rows = (await self.session.execute(query)).all()
+        insights: list[dict] = []
+        for row in rows:
+            total_calls = int(row.total_calls or 0)
+            booked_calls = int(row.booked_calls or 0)
+            booking_rate = round((booked_calls / total_calls) * 100.0, 2) if total_calls else 0.0
+            avg_final_rate = float(row.avg_final_rate or 0.0)
+            avg_loadboard_rate = float(row.avg_loadboard_rate or 0.0)
+            market_gap_pct = (
+                round(((avg_final_rate - avg_loadboard_rate) / avg_loadboard_rate) * 100.0, 2) if avg_loadboard_rate else 0.0
+            )
+            insights.append(
+                {
+                    "equipment_type": str(row.equipment_type).title(),
+                    "total_calls": total_calls,
+                    "booked_calls": booked_calls,
+                    "booking_rate": booking_rate,
+                    "avg_final_rate": avg_final_rate,
+                    "avg_loadboard_rate": avg_loadboard_rate,
+                    "avg_miles": float(row.avg_miles or 0.0),
+                    "market_gap_pct": market_gap_pct,
+                }
+            )
+        return insights

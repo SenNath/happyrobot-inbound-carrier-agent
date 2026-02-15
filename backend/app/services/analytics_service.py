@@ -33,16 +33,4 @@ class AnalyticsService:
         return await self.call_repo.sentiment_distribution()
 
     async def load_performance(self) -> list[dict]:
-        base = await self.negotiation_repo.load_performance()
-        loads = {load.load_id: load for load in await self.load_repo.all_loads()}
-
-        enriched = []
-        for item in base:
-            load = loads.get(item["load_id"])
-            enriched.append(
-                {
-                    **item,
-                    "loadboard_rate": float(load.loadboard_rate) if load else 0.0,
-                }
-            )
-        return enriched
+        return await self.call_repo.load_performance_insights()
