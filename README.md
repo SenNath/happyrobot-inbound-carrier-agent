@@ -17,6 +17,19 @@ Production-grade full-stack project for HappyRobot voice workflow tool webhooks 
 - Dockerized backend + frontend + Postgres
 - Railway deployment-ready configuration/docs
 
+## Documentation map
+- Start here for platform and API overview.
+- Deployment access + reproducibility instructions are in `DEPLOYMENT.md`.
+- Endpoint-level contracts are in `API_REFERENCE.md`.
+- System design details are in `ARCHITECTURE.md`.
+
+## Live access
+- Backend API (Railway): `https://backend-production-09d1b.up.railway.app`
+- Frontend dashboard (Railway): `https://frontend-production-1ee2.up.railway.app`
+- HappyRobot inbound carrier sales workflow:
+  - `https://platform.happyrobot.ai/fdesenthilnathan/workflow/nml021tw7tyj/editor/vfyfokyvyldl`
+  - requires HappyRobot platform/workspace access
+
 ## Project structure
 ```text
 backend/
@@ -88,7 +101,12 @@ cd backend
 pytest -q
 ```
 
-## HappyRobot integration notes
+## HappyRobot workflow integration
+- This system is wired for the HappyRobot inbound carrier sales workflow (`verify_carrier` -> `search_loads` -> `evaluate_offer` -> `log_call`).
+- Production workflow URL: `https://platform.happyrobot.ai/fdesenthilnathan/workflow/nml021tw7tyj/editor/vfyfokyvyldl`
+- The workflow URL requires access to the owning HappyRobot workspace.
+
+## HappyRobot API integration notes
 - Configure HappyRobot tools to hit your backend base URL.
 - Send `X-API-Key` header matching `INTERNAL_API_KEY`.
 - Required request keys are implemented exactly as specified:
@@ -101,4 +119,4 @@ pytest -q
   - `round_number`
 - `POST /log-call` accepts AI Extract analytics payload with `call_outcome` required and all other fields optional; missing fields are stored as `NULL`.
 
-Detailed endpoint contracts are in `API_REFERENCE.md`.
+For deployment access and full reproducible deployment steps, see `DEPLOYMENT.md`.

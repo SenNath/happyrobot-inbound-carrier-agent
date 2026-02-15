@@ -58,5 +58,7 @@ HappyRobot hosts the voice workflow and calls backend tools. This project provid
 ## Reliability and operations
 - Stateless API containers
 - PostgreSQL as source of truth
-- Idempotent startup load seeding (only when table is empty)
+- Idempotent load seeding paths:
+  - startup seed (only when `loads` is empty)
+  - append seed command (`python -m app.db.seed --mode append`) for reproducible E2E test data
 - Docker and Railway deployment paths

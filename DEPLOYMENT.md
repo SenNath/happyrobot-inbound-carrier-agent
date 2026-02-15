@@ -1,5 +1,16 @@
 # Deployment
 
+## Purpose
+This guide covers:
+- How to access running deployments.
+- How to reproduce deployments from scratch (local Docker and Railway).
+- How to run a quick end-to-end validation after deployment.
+
+## Prerequisites
+- Docker + Docker Compose (for local full-stack deployment).
+- Python 3.11 (for backend-only workflows).
+- Railway CLI (`railway`) if deploying to Railway.
+
 ## Environment variables
 Required for backend:
 - `DATABASE_URL`
@@ -19,6 +30,10 @@ Required for frontend:
 ```bash
 docker compose up --build -d
 ```
+
+Access local services:
+- Backend API: `http://localhost:8000`
+- Frontend dashboard: `http://localhost:3000`
 
 ## Railway deployment (recommended)
 
@@ -80,6 +95,11 @@ You can re-run this safely; existing seed IDs are skipped.
 3. Verify:
    - `GET https://<backend-domain>/health`
    - `POST https://<backend-domain>/verify-carrier` with `X-API-Key`.
+4. For dashboard access, open the frontend public domain and verify pages load:
+   - Overview
+   - Funnel
+   - Sentiment
+   - Load performance
 
 ## Reproducible redeploy
 ### Manual
@@ -90,6 +110,13 @@ You can re-run this safely; existing seed IDs are skipped.
 ### Shell scripts
 - First-time helper: `./scripts/railway-deploy.sh`
 - Repeat deploy helper: `./infra/railway/redeploy.sh`
+
+### CLI deployment commands (explicit)
+If not using helper scripts:
+```bash
+railway up -s backend --path-as-root backend --detach
+railway up -s frontend --path-as-root frontend --detach
+```
 
 ## End-to-end smoke test checklist
 Run this after deploy (local or Railway) so any reviewer can validate the full workflow quickly:
