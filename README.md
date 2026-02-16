@@ -24,9 +24,9 @@ Production-grade full-stack project for HappyRobot voice workflow tool webhooks 
 - System design details are in `ARCHITECTURE.md`.
 
 ## Live access
-- Backend API (Railway): `https://backend-production-09d1b.up.railway.app`
-- Frontend dashboard (Railway): `https://frontend-production-1ee2.up.railway.app`
-- HappyRobot inbound carrier sales workflow:
+- Backend API (Railway): `https://happyagent-backend.up.railway.app`
+- Frontend dashboard (Railway): `https://happyagent-console.up.railway.app`
+- HappyRobot inbound carrier sales Agent:
   - `https://platform.happyrobot.ai/fdesenthilnathan/workflow/nml021tw7tyj/editor/vfyfokyvyldl`
   - requires HappyRobot platform/workspace access
 

@@ -131,8 +131,8 @@ Run this after deploy (local or Railway) so any reviewer can validate the full w
 
 ## Current live deployment (this project)
 - GitHub repo: `https://github.com/SenNath/happyrobot-inbound-carrier-agent`
-- Railway backend: `https://backend-production-09d1b.up.railway.app`
-- Railway frontend: `https://frontend-production-1ee2.up.railway.app`
+- Railway backend: `https://happyagent-backend.up.railway.app`
+- Railway frontend: `https://happyagent-console.up.railway.app`
 
 ## GitHub-linked Railway note
 - If `railway add --repo ...` returns `repo not found`, install/authorize the Railway GitHub app for that repository in GitHub settings.
